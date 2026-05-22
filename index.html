@@ -206,22 +206,34 @@
             document.getElementById('tDesc').placeholder = isInc ? 'Gaji, Bonus...' : 'Makan, Tagihan...';
         }
 
-        // --- DATA HANDLING ---
+                // --- DATA HANDLING (DIPERBARUI) ---
+
         async function loadData() {
             toggleLoad(true);
             try {
-                const res = await fetch(`${API_URL}?action=read`);
+                // Tambahkan header ke request GET juga (opsional tapi disarankan)
+                const res = await fetchWithTimeout(`${API_URL}?action=read`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const json = await res.json();
                 if(json.status === 'success') {
                     dataTrx = json.data;
                     render();
+                } else {
+                    console.error("Status error:", json);
                 }
-            } catch(e) { console.error(e); }
-            toggleLoad(false);
+            } catch(e) { 
+                console.error("Error Load:", e.message);
+                // Opsional: Tampilkan alert jika load awal gagal
+                // alert("Gagal memuat data awal: " + e.message); 
+            }
+            finally { toggleLoad(false); }
         }
 
         async function saveData() {
             toggleLoad(true);
+            
             const payload = {
                 action: 'add',
                 id: Date.now(),
@@ -232,25 +244,64 @@
             };
             
             try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-                await loadData();
-                document.getElementById('formTrans').reset();
-                document.getElementById('tDate').valueAsDate = new Date();
-                updLbl();
-                showToast("Data Disimpan");
-            } catch(e) { alert("Gagal Simpan"); }
-            toggleLoad(false);
+                // PERBAIKAN: Menambahkan Headers di sini
+                const response = await fetchWithTimeout(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' // <--- INI PENTING
+                    },
+                    body: JSON.stringify(payload),
+                    redirect: 'follow' // Memastikan mengikuti redirect Google
+                });
+
+                // Cek apakah response valid JSON
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    await loadData(); // Refresh data
+                    document.getElementById('formTrans').reset();
+                    document.getElementById('tDate').valueAsDate = new Date();
+                    updLbl();
+                    showToast("Data Berhasil Disimpan");
+                } else {
+                    throw new Error("Server Error: " + (result.message || "Unknown"));
+                }
+
+            } catch(e) { 
+                console.error(e);
+                alert("GAGAL SIMPAN: " + e.message); 
+            }
+            finally { toggleLoad(false); }
         }
 
         async function delData(id) {
-            if(!confirm("Hapus?")) return;
+            if(!confirm("Hapus data ini?")) return;
             toggleLoad(true);
+            
             try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id }) });
-                await loadData();
-                showToast("Terhapus");
-            } catch(e) { alert("Gagal Hapus"); }
-            toggleLoad(false);
+                // PERBAIKAN: Menambahkan Headers di sini juga
+                const response = await fetchWithTimeout(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' // <--- INI PENTING
+                    },
+                    body: JSON.stringify({ action: 'delete', id: id }),
+                    redirect: 'follow'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    await loadData();
+                    showToast("Data Terhapus");
+                } else {
+                    throw new Error("Server Error");
+                }
+
+            } catch(e) { 
+                alert("Gagal Hapus: " + e.message); 
+            }
+            finally { toggleLoad(false); }
         }
 
         document.getElementById('formTrans').addEventListener('submit', (e) => { e.preventDefault(); saveData(); });
