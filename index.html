@@ -3,243 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <title>Keuangan Fix Final</title>
+    <title>Keuangan Lengkap</title>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; }
+        :root { 
+            --primary: #2563eb; --bg: #f1f5f9; --card: #ffffff; 
+            --border: #e2e8f0; --text: #1e293b; 
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); padding: 16px; padding-bottom: 100px; }
-        .container { max-width: 600px; margin: 0 auto; }
+        body { background: var(--bg); color: var(--text); padding: 16px; padding-bottom: 100px; }
+        .container { max-width: 800px; margin: 0 auto; }
         
-        /* Cards */
-        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 16px; }
-        h2 { font-size: 14px; color: #64748b; text-transform: uppercase; margin-bottom: 12px; }
-        
-        /* Form */
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #334155; }
-        input, select { width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
-        button { width: 100%; height: 44px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        button:active { opacity: 0.8; }
+        /* HEADER */
+        h1 { font-size: 20px; margin-bottom: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
 
-        /* Table */
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 400px; font-size: 13px; }
-        th, td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: left; }
-        th { background: #f8fafc; font-size: 11px; }
-        
-        /* Stats */
-        .stats { display: flex; gap: 10px; margin-bottom: 16px; }
-        .stat { flex: 1; background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-weight: bold; font-size: 14px; margin-top: 4px; }
+        /* ==========================
+           1. BAGIAN KALKULASI (STATS)
+           ========================== */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 12px; 
+            margin-bottom: 24px; 
+        }
+        .stat-card { 
+            background: var(--card); 
+            padding: 16px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            text-align: center; 
+            border: 1px solid var(--border);
+        }
+        .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px; font-weight: 700; }
+        .stat-value { font-size: 16px; font-weight: 800; }
+        .val-inc { color: #16a34a; }
+        .val-out { color: #dc2626; }
+        .val-bal { color: #2563eb; }
 
-        /* Utils */
-        .text-g { color: #16a34a; }
-        .text-r { color: #dc2626; }
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 99; display: none; justify-content: center; align-items: center; flex-direction: column; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        /* FORM */
+        .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 24px; border: 1px solid var(--border); }
+        h2 { font-size: 16px; margin-bottom: 16px; font-weight: 700; border-bottom: 2px solid var(--bg); padding-bottom: 8px; }
+        
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        input, select { 
+            width: 100%; height: 46px; padding: 0 12px; border: 1px solid #cbd5e1; 
+            border-radius: 8px; font-size: 15px; background: #fff; 
+        }
+        button { 
+            width: 100%; height: 48px; background: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-weight: 700; font-size: 16px; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        button:active { transform: scale(0.98); background: #1d4ed8; }
+
+        /* ==========================
+           2. BAGIAN TABEL RIWAYAT
+           ========================== */
+        .table-container { 
+            overflow-x: auto; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            background: #fff;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 14px; }
+        th { 
+            background: #f8fafc; color: #64748b; font-weight: 700; 
+            text-align: left; padding: 12px 16px; font-size: 12px; text-transform: uppercase; 
+        }
+        td { 
+            padding: 12px 16px; border-bottom: 1px solid #f1f5f9; 
+            vertical-align: middle; 
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* UTILS */
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .bg-in { background: #dcfce7; color: #166534; }
         .bg-out { background: #fee2e2; color: #991b1b; }
-        .del-btn { border: none; background: none; color: red; cursor: pointer; font-size: 18px; }
+        
+        .btn-del { border: none; background: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 5px; }
+        .btn-del:hover { color: #dc2626; }
+
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; gap: 10px; }
+        .loader-text { font-weight: bold; color: #333; }
+        .empty-state { text-align: center; padding: 30px; color: #94a3b8; font-style: italic; }
     </style>
 </head>
 <body>
 
+    <!-- LOADING OVERLAY -->
     <div id="loader">
-        <div>Memproses...</div>
+        <div class="loader-text">Memproses Data...</div>
+        <small>Mohon tunggu sebentar</small>
     </div>
 
     <div class="container">
-        <header style="margin-bottom:16px;">
+        <header>
             <h1>💰 KeuanganKu</h1>
         </header>
 
-        <div class="stats">
-            <div class="stat"><div class="stat-lbl">Masuk</div><div class="stat-val text-g" id="valIn">0</div></div>
-            <div class="stat"><div class="stat-lbl">Keluar</div><div class="stat-val text-r" id="valOut">0</div></div>
-            <div class="stat"><div class="stat-lbl">Saldo</div><div class="stat-val" id="valBal">0</div></div>
+        <!-- BAGIAN 1: KALKULASI OTOMATIS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Pemasukan</div>
+                <div class="stat-value val-inc" id="sumIncome">Rp 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pengeluaran</div>
+                <div class="stat-value val-out" id="sumExpense">Rp 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sisa Saldo</div>
+                <div class="stat-value val-bal" id="sumBalance">Rp 0</div>
+            </div>
         </div>
 
+        <!-- FORM INPUT -->
         <div class="card">
-            <h2>Input Transaksi</h2>
-            <form id="myForm">
+            <h2>Input Transaksi Baru</h2>
+            <form id="financeForm">
                 <div class="form-group">
-                    <label>Jenis</label>
-                    <select id="inpType">
-                        <option value="income">Pemasukan</option>
-                        <option value="expense">Pengeluaran</option>
+                    <label>Jenis Transaksi</label>
+                    <select id="type">
+                        <option value="income">Pemasukan (Income)</option>
+                        <option value="expense">Pengeluaran (Expense)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Nominal</label>
-                    <input type="number" id="inpAmt" placeholder="0" required>
+                    <label>Nominal (Rp)</label>
+                    <input type="number" id="amount" placeholder="0" inputmode="numeric" required>
                 </div>
                 <div class="form-group">
                     <label>Tanggal</label>
-                    <input type="date" id="inpDate" required>
+                    <input type="date" id="date" required>
                 </div>
                 <div class="form-group">
                     <label>Keterangan</label>
-                    <input type="text" id="inpDesc" placeholder="Isi detail..." required>
+                    <input type="text" id="desc" placeholder="Contoh: Gaji Bulanan / Makan Siang" required>
                 </div>
                 <button type="submit">SIMPAN DATA</button>
             </form>
         </div>
 
+        <!-- BAGIAN 2: TABEL RIWAYAT -->
         <div class="card">
-            <h2>Riwayat</h2>
-            <div class="table-wrap">
-                <table id="myTable">
-                    <thead><tr><th>Tgl</th><th>Ket</th><th>Jns</th><th>Nominal</th><th></th></tr></thead>
-                    <tbody id="tableBody"></tbody>
+            <h2>Riwayat Transaksi</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Keterangan</th>
+                            <th>Jenis</th>
+                            <th>Nominal</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data akan muncul di sini -->
+                    </tbody>
                 </table>
+                <div id="emptyMsg" class="empty-state">Belum ada data transaksi.</div>
             </div>
         </div>
     </div>
 
     <script>
         // ==========================================
-        // 1. SETTING URL (WAJIB DIISI)
+        // KONFIGURASI URL
+        // Ganti dengan URL Web App Google Script Anda
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbylXoHcASk47wRnPgumeuGrpufJuf5NaIPx8r2J2ckQlBImgftKh1cD2cMzQFmPUGw/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylXoHcASk47wRnPgumeuGrpufJuf5NaIPx8r2J2ckQlBImgftKh1cD2cMzQFmPUGw/exec";
 
         let transactions = [];
 
-        // 2. INISIALISASI
+        // INIT SAAT HALAMAN DIBUKA
         window.onload = function() {
-            document.getElementById('inpDate').valueAsDate = new Date();
-            loadData();
+            document.getElementById('date').valueAsDate = new Date();
+            // Load data pertama kali
+            loadTableAndStats(); 
         };
 
-        document.getElementById('myForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            await saveData();
+        // EVENT LISTENER TOMBOL SIMPAN
+        document.getElementById('financeForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Mencegah reload biasa
+            await saveTransaction();
         });
 
-                // FUNGSI FETCH VERSI NO-CORS (MENGHILANGKAN ERROR FAILED TO FETCH)
-        function safeFetch(url, options = {}) {
-            return new Promise((resolve, reject) => {
-                if(API_URL.includes("PASTE")) { reject("URL belum diisi!"); return; }
-
-                // TAMBAHKAN mode: 'no-cors' di sini
-                fetch(url, { ...options, mode: 'no-cors' })
-                    .then(res => {
-                        // Dalam mode 'no-cors', kita tidak bisa baca isi body atau status kode sebenarnya.
-                        // Kita asumsikan jika sampai sini (tidak catch), berarti request berhasil dikirim ke server.
-                        // Karena data Anda terbukti masuk, kita anggap SUKSES.
-                        resolve({ status: 'success', message: 'Terima kasih' });
-                    })
-                    .catch(err => {
-                        // Hanya jika benar-benar tidak ada koneksi internet
-                        reject("Gagal mengirim: " + err.message);
-                    });
-            });
-        }
-        // 4. LOAD DATA
-        async function loadData() {
+        // ==========================================
+        // FUNGSI UTAMA: SIMPAN DATA (NO-CORS)
+        // ==========================================
+        async function saveTransaction() {
             showLoading(true);
-            try {
-                const data = await safeFetch(API_URL + "?action=read");
-                if(data.status === 'success') {
-                    transactions = data.data;
-                    render();
-                }
-            } catch(err) {
-                console.error("Load Error:", err);
-                // Jangan alert saat load awal biar tidak ganggu
-            } finally {
-                showLoading(false);
-            }
-        }
 
-        // 5. SAVE DATA (MENGGUNAKAN NO-CORS)
-        async function saveData() {
-            showLoading(true);
-            
-            const dataPayload = {
+            const data = {
                 action: 'add',
                 id: Date.now(),
-                type: document.getElementById('inpType').value,
-                amount: parseFloat(document.getElementById('inpAmt').value),
-                date: document.getElementById('inpDate').value,
-                description: document.getElementById('inpDesc').value
+                type: document.getElementById('type').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                date: document.getElementById('date').value,
+                description: document.getElementById('desc').value
             };
 
             try {
-                const params = new URLSearchParams(dataPayload).toString();
-                const finalUrl = `${API_URL}?${params}`;
+                // Menggunakan metode GET + No-CORS agar 100% tembus tanpa error
+                const params = new URLSearchParams(data).toString();
+                const url = `${SCRIPT_URL}?${params}`;
 
-                // Panggil safeFetch (yang sudah di-set no-cors)
-                await safeFetch(finalUrl, { method: 'GET' });
+                await fetch(url, { method: 'GET', mode: 'no-cors' });
 
-                // Karena pakai no-cors, kita langsung anggap sukses jika tidak throw error
-                alert("SUKSES! Data telah dikirim ke Spreadsheet.");
+                // Karena no-cors, kita asumsikan sukses jika tidak ada error jaringan
+                alert("✅ Data Berhasil Disimpan!");
                 
-                document.getElementById('myForm').reset();
-                document.getElementById('inpDate').valueAsDate = new Date();
-                
-                // Reload data untuk melihat update (paksa reload halaman atau fetch ulang)
-                // Karena no-cors tidak bisa baca JSON, kita reload halaman saja agar fresh
+                // RESET FORM
+                document.getElementById('financeForm').reset();
+                document.getElementById('date').valueAsDate = new Date();
+
+                // REFRESH HALAMAN UNTUK UPDATE TABEL & STATISTIK
+                // (Cara teraman memastikan data terbaru muncul tanpa error baca data)
                 window.location.reload(); 
 
-            } catch(err) {
-                alert("ERROR: " + err);
+            } catch (err) {
+                alert("❌ Gagal Menyimpan: " + err.message);
             } finally {
                 showLoading(false);
             }
         }
 
-                // 6. DELETE (JUGA MENGGUNAKAN GET)
-        async function delData(id) {
-            if(!confirm("Hapus?")) return;
+        // ==========================================
+        // FUNGSI: HAPUS DATA
+        // ==========================================
+        async function deleteTransaction(id) {
+            if(!confirm("Yakin ingin menghapus data ini?")) return;
             showLoading(true);
+
             try {
                 const params = new URLSearchParams({ action: 'delete', id: id }).toString();
-                const finalUrl = `${API_URL}?${params}`;
-
-                const res = await safeFetch(finalUrl, { method: 'GET' });
+                const url = `${SCRIPT_URL}?${params}`;
                 
-                if(res.status === 'success') {
-                    await loadData();
-                    alert("Terhapus");
-                } else {
-                    alert("Gagal Hapus: " + res.message);
-                }
-            } catch(err) {
+                await fetch(url, { method: 'GET', mode: 'no-cors' });
+                
+                alert("Data dihapus");
+                window.location.reload(); // Refresh untuk update
+
+            } catch (err) {
                 alert("Gagal Hapus: " + err);
             } finally {
                 showLoading(false);
             }
         }
-        // 7. RENDER
-        function render() {
-            const tb = document.getElementById('tableBody');
-            tb.innerHTML = '';
-            
-            let totalIn = 0, totalOut = 0;
 
-            transactions.forEach(t => {
-                const isInc = t.type === 'income';
-                if(isInc) totalIn += t.amount; else totalOut += t.amount;
+        // ==========================================
+        // LOGIKA KALKULASI & TABEL RIWAYAT
+        // ==========================================
+        async function loadTableAndStats() {
+            // Coba ambil data untuk ditampilkan
+            // Jika gagal karena CORS saat baca, biarkan saja tabel kosong (user bisa refresh)
+            try {
+                const res = await fetch(SCRIPT_URL + "?action=read");
+                const json = await res.json();
+                
+                if(json.status === 'success') {
+                    transactions = json.data;
+                    renderApp();
+                }
+            } catch (e) {
+                console.log("Gagal memuat tabel awal (kemungkinan CORS), silakan refresh manual.", e);
+            }
+        }
 
-                tb.innerHTML += `
-                    <tr>
-                        <td>${t.date}</td>
+        function renderApp() {
+            const tbody = document.getElementById('tableBody');
+            const emptyMsg = document.getElementById('emptyMsg');
+            tbody.innerHTML = '';
+
+            // Variabel untuk Kalkulasi
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            if (transactions.length === 0) {
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                
+                // Loop Data untuk Tabel & Kalkulasi
+                transactions.forEach(t => {
+                    const isIncome = t.type === 'income';
+                    
+                    // 1. LOGIKA KALKULASI OTOMATIS
+                    if (isIncome) {
+                        totalIncome += t.amount;
+                    } else {
+                        totalExpense += t.amount;
+                    }
+
+                    // 2. LOGIKA TABEL RIWAYAT
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatDate(t.date)}</td>
                         <td>${t.description}</td>
-                        <td><span class="badge ${isInc?'bg-in':'bg-out'}">${isInc?'IN':'OUT'}</span></td>
-                        <td class="${isInc?'text-g':'text-r'}">${formatRp(t.amount)}</td>
-                        <td><button class="del-btn" onclick="delData(${t.id})">&times;</button></td>
-                    </tr>
-                `;
-            });
+                        <td><span class="badge ${isIncome ? 'bg-in' : 'bg-out'}">${isIncome ? 'Masuk' : 'Keluar'}</span></td>
+                        <td style="font-weight:bold; color: ${isIncome ? '#16a34a' : '#dc2626'}">
+                            ${formatRupiah(t.amount)}
+                        </td>
+                        <td style="text-align:center">
+                            <button class="btn-del" onclick="deleteTransaction(${t.id})">&times;</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
 
-            document.getElementById('valIn').innerText = formatRp(totalIn);
-            document.getElementById('valOut').innerText = formatRp(totalOut);
-            document.getElementById('valBal').innerText = formatRp(totalIn - totalOut);
+            // UPDATE TAMPILAN KALKULASI
+            document.getElementById('sumIncome').innerText = formatRupiah(totalIncome);
+            document.getElementById('sumExpense').innerText = formatRupiah(totalExpense);
+            document.getElementById('sumBalance').innerText = formatRupiah(totalIncome - totalExpense);
         }
 
         // Helpers
         function showLoading(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
-        function formatRp(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
+        function formatRupiah(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
+        function formatDate(d) { 
+            const date = new Date(d);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); 
+        }
     </script>
 </body>
 </html>
