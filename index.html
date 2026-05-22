@@ -189,19 +189,15 @@
         // ==========================================
         // GANTI URL SCRIPT ANDA DI SINI
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbzzdtaF3zzVnBOYNcy9kMx1H0hsa5p4Kd39oFvxb6_EQBG3VpNzCqIbA7YSvbhbxHWg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbylXoHcASk47wRnPgumeuGrpufJuf5NaIPx8r2J2ckQlBImgftKh1cD2cMzQFmPUGw/exec";
 
         let dataTrx = [];
 
-                // ==========================================
-        // FUNGSI BANTUAN: FETCH DENGAN TIMEOUT
-        // Tempatkan kode ini di bagian atas script
-        // ==========================================
+                // --- FUNGSI FETCH VERSI PERBAIKAN (LEbih Toleran) ---
         function fetchWithTimeout(url, options = {}, timeout = 15000) {
             return new Promise((resolve, reject) => {
-                // Cek jika URL masih placeholder
                 if (url.includes("PASTE_URL") || url.length < 20) {
-                    reject(new Error("URL Script belum diisi! Silakan edit file HTML."));
+                    reject(new Error("URL Script belum diisi!"));
                     return;
                 }
 
@@ -212,18 +208,19 @@
                     .then(response => {
                         clearTimeout(id);
                         
-                        // Cek apakah respon valid JSON (Bukan halaman error Google)
-                        const contentType = response.headers.get("content-type");
-                        if (!contentType || !contentType.includes("application/json")) {
-                            reject(new Error("Respon Bukan JSON. Pastikan settingan Google Script 'Who has access' = 'Anyone'."));
-                        } else {
-                            resolve(response);
+                        // Kita HANYA mengecek status code HTTP (200 OK), bukan tipe konten
+                        // Karena Google Script kadang mengembalikan header yang membingungkan
+                        if (!response.ok) {
+                            throw new Error(`Server Error: ${response.status}`);
                         }
+                        
+                        // Kita kembalikan response object mentah
+                        resolve(response);
                     })
                     .catch(err => {
                         clearTimeout(id);
                         if (err.name === 'AbortError') {
-                            reject(new Error("Waktu habis (Timeout). Koneksi lambat."));
+                            reject(new Error("Waktu habis (Timeout)."));
                         } else {
                             reject(err);
                         }
