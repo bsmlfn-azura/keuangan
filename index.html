@@ -254,25 +254,47 @@
             }
         }
 
-        // ==========================================
-        // LOGIKA KALKULASI & TABEL RIWAYAT
+                // ==========================================
+        // FUNGSI LOAD DATA & KALKULASI (VERSI DEBUG)
         // ==========================================
         async function loadTableAndStats() {
-            // Coba ambil data untuk ditampilkan
-            // Jika gagal karena CORS saat baca, biarkan saja tabel kosong (user bisa refresh)
+            showLoading(true);
             try {
-                const res = await fetch(SCRIPT_URL + "?action=read");
-                const json = await res.json();
+                console.log("Mencoba mengambil data dari:", SCRIPT_URL);
                 
+                const res = await fetch(SCRIPT_URL + "?action=read");
+                
+                // Cek jika respon bukan OK (misal 404 atau 500)
+                if (!res.ok) {
+                    throw new Error("Server Error: " + res.status);
+                }
+
+                // Coba baca teks response dulu untuk memastikan itu JSON, bukan halaman HTML login Google
+                const text = await res.text();
+                let json;
+                try {
+                    json = JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Respon Bukan JSON. Kemungkinan akses script belum di-set ke 'Anyone'.");
+                }
+
+                // Jika sukses
                 if(json.status === 'success') {
                     transactions = json.data;
-                    renderApp();
+                    renderApp(); // Panggil fungsi untuk hitung & tabel
+                    console.log("Data berhasil dimuat:", transactions.length, "baris");
+                } else {
+                    throw new Error(json.message || "Status gagal dari server");
                 }
+
             } catch (e) {
-                console.log("Gagal memuat tabel awal (kemungkinan CORS), silakan refresh manual.", e);
+                // TAMPILKAN ERROR KE PENGGUNA
+                console.error("Gagal Load:", e);
+                alert("⚠️ GAGAL MEMUAT DATA & KALKULASI!\n\nAlasan: " + e.message + "\n\nSolusi: Pastikan URL Script sudah benar dan Script Google sudah di-Deploy ulang dengan akses 'Anyone'.");
+            } finally {
+                showLoading(false);
             }
         }
-
         function renderApp() {
             const tbody = document.getElementById('tableBody');
             const emptyMsg = document.getElementById('emptyMsg');
