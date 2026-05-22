@@ -757,80 +757,163 @@ function jsonResp(d) {
         }
 
         // ================================================
-        // DATABASE LAYER — Abstraksi penyimpanan
-        // ================================================
+// DATABASE LAYER — Dual Strategy (fetch + XHR)
+// ================================================
 
-        // Muat dari localStorage
-        function loadLocal() {
-            try {
-                const d = localStorage.getItem(LOCAL_KEY);
-                return d ? JSON.parse(d) : [];
-            } catch { return []; }
-        }
+// Muat dari localStorage
+function loadLocal() {
+    try {
+        const d = localStorage.getItem(LOCAL_KEY);
+        return d ? JSON.parse(d) : [];
+    } catch { return []; }
+}
 
-        // Simpan ke localStorage
-        function saveLocal(data) {
-            localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
-        }
+// Simpan ke localStorage
+function saveLocal(data) {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+}
 
-        // Fetch dari Google Sheets
-        async function fetchFromSheet() {
-            if (!settings.scriptUrl) return [];
-            try {
-                const url = settings.scriptUrl + '?action=read';
-                const resp = await fetch(url, { redirect: 'follow' });
-                const json = await resp.json();
-                if (json.status === 'ok') return json.data;
-                throw new Error(json.message || 'Gagal membaca data');
-            } catch (err) {
-                console.error('Fetch error:', err);
-                return null; // null menandakan error
-            }
-        }
-
-        // Kirim ke Google Sheets
-        async function postToSheet(payload) {
-            if (!settings.scriptUrl) return null;
-            try {
-                const resp = await fetch(settings.scriptUrl, {
-                    method: 'POST',
-                    redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                const json = await resp.json();
-                return json;
-            } catch (err) {
-                console.error('Post error:', err);
-                return null;
-            }
-        }
-
-        // Muat semua transaksi (sesuai mode)
-        async function loadTransactions() {
-            if (settings.mode === 'sheet' && settings.scriptUrl) {
-                updateStatus('loading', 'Sinkronisasi...');
-                const data = await fetchFromSheet();
-                if (data !== null) {
-                    transactions = data;
-                    saveLocal(data); // cache lokal
-                    isConnected = true;
-                    updateStatus('online', 'Google Sheets');
-                    return;
+// XHR GET — fallback yang lebih reliable untuk Google Apps Script
+function xhrGet(url) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    resolve(JSON.parse(xhr.responseText));
+                } catch (e) {
+                    reject(new Error('Response bukan JSON: ' + xhr.responseText.substring(0, 200)));
                 }
-                // Fallback ke cache lokal
-                transactions = loadLocal();
-                isConnected = false;
-                updateStatus('offline', 'Offline (cache)');
-                showToast('Gagal menghubungi Google Sheets, menggunakan cache lokal', 'error');
-                return;
+            } else {
+                reject(new Error('HTTP ' + xhr.status + ': ' + xhr.statusText));
             }
-            // Mode lokal
-            transactions = loadLocal();
-            isConnected = false;
-            updateStatus('local', 'Lokal (Browser)');
-        }
+        };
+        xhr.onerror = function() {
+            reject(new Error('Network error — periksa koneksi internet dan URL'));
+        };
+        xhr.ontimeout = function() {
+            reject(new Error('Request timeout — server terlalu lama merespons'));
+        };
+        xhr.timeout = 15000;
+        xhr.send();
+    });
+}
 
+// XHR POST — untuk kirim data ke Apps Script
+function xhrPost(url, payload) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        // Gunakan text/plain agar tidak trigger CORS preflight
+        xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    resolve(JSON.parse(xhr.responseText));
+                } catch (e) {
+                    reject(new Error('Response bukan JSON: ' + xhr.responseText.substring(0, 200)));
+                }
+            } else {
+                reject(new Error('HTTP ' + xhr.status));
+            }
+        };
+        xhr.onerror = function() {
+            reject(new Error('Network error'));
+        };
+        xhr.ontimeout = function() {
+            reject(new Error('Request timeout'));
+        };
+        xhr.timeout = 15000;
+        xhr.send(JSON.stringify(payload));
+    });
+}
+
+// Fetch dari Google Sheets (dual strategy)
+async function fetchFromSheet() {
+    if (!settings.scriptUrl) return null;
+    
+    const cacheBuster = '?t=' + Date.now();
+    const url = settings.scriptUrl + cacheBuster;
+
+    // Strategy 1: fetch dengan redirect: follow
+    try {
+        const resp = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow',
+            mode: 'cors'
+        });
+        if (resp.ok) {
+            const text = await resp.text();
+            return JSON.parse(text);
+        }
+        throw new Error('HTTP ' + resp.status);
+    } catch (fetchErr) {
+        console.warn('Fetch GET gagal, mencoba XHR:', fetchErr.message);
+    }
+
+    // Strategy 2: XHR fallback
+    try {
+        return await xhrGet(settings.scriptUrl);
+    } catch (xhrErr) {
+        console.warn('XHR GET juga gagal:', xhrErr.message);
+        return null;
+    }
+}
+
+// Kirim data ke Google Sheets (dual strategy)
+async function postToSheet(payload) {
+    if (!settings.scriptUrl) return null;
+
+    // Strategy 1: fetch dengan text/plain
+    try {
+        const resp = await fetch(settings.scriptUrl, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        if (resp.ok) {
+            const text = await resp.text();
+            return JSON.parse(text);
+        }
+        throw new Error('HTTP ' + resp.status);
+    } catch (fetchErr) {
+        console.warn('Fetch POST gagal, mencoba XHR:', fetchErr.message);
+    }
+
+    // Strategy 2: XHR fallback
+    try {
+        return await xhrPost(settings.scriptUrl, payload);
+    } catch (xhrErr) {
+        console.warn('XHR POST juga gagal:', xhrErr.message);
+        return null;
+    }
+}
+
+// Muat semua transaksi
+async function loadTransactions() {
+    if (settings.mode === 'sheet' && settings.scriptUrl) {
+        updateStatus('loading', 'Sinkronisasi...');
+        const data = await fetchFromSheet();
+        if (data !== null && data.status === 'ok') {
+            transactions = data.data || [];
+            saveLocal(transactions);
+            isConnected = true;
+            updateStatus('online', 'Google Sheets (' + transactions.length + ')');
+            return;
+        }
+        // Fallback ke cache lokal
+        transactions = loadLocal();
+        isConnected = false;
+        updateStatus('offline', 'Offline (cache)');
+        showToast('Gagal sinkronisasi, menggunakan data cache', 'error');
+        return;
+    }
+    transactions = loadLocal();
+    isConnected = false;
+    updateStatus('local', 'Lokal (Browser)');
+}
         // Simpan transaksi (sesuai mode)
         async function persistTransactions() {
             saveLocal(transactions); // Selalu simpan ke lokal sebagai cache
@@ -1451,29 +1534,103 @@ function jsonResp(d) {
         }
 
         async function testConnection() {
-            const url = document.getElementById('scriptUrl').value.trim();
-            if (!url) { showToast('Masukkan URL terlebih dahulu', 'error'); return; }
+    const url = document.getElementById('scriptUrl').value.trim();
+    if (!url) {
+        showToast('Masukkan URL terlebih dahulu', 'error');
+        return;
+    }
 
-            const btn = document.getElementById('testConnBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    // Validasi format URL
+    if (!url.includes('script.google.com/macros/s/')) {
+        showToast('URL tidak valid — harus dari script.google.com/macros/s/...', 'error');
+        return;
+    }
 
+    const btn = document.getElementById('testConnBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    let diagResult = 'DIAGNOSA KONEKSI\n';
+    diagResult += '================\n';
+    diagResult += 'URL: ' + url + '\n\n';
+
+    // Test 1: Cek apakah URL bisa diakses
+    diagResult += '[1] Mencoba fetch GET...\n';
+    let success = false;
+
+    try {
+        const testUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const resp = await fetch(testUrl, {
+            method: 'GET',
+            redirect: 'follow',
+            mode: 'cors'
+        });
+        diagResult += '    Status: HTTP ' + resp.status + '\n';
+        diagResult += '    Type: ' + resp.type + '\n';
+        
+        if (resp.ok) {
+            const text = await resp.text();
+            diagResult += '    Body (awal): ' + text.substring(0, 300) + '\n';
+            
             try {
-                const resp = await fetch(url + '?action=read', { redirect: 'follow' });
-                const json = await resp.json();
+                const json = JSON.parse(text);
+                diagResult += '    JSON valid: YA\n';
+                diagResult += '    Status: ' + json.status + '\n';
                 if (json.status === 'ok') {
-                    showToast('Koneksi berhasil! ' + json.data.length + ' transaksi ditemukan.', 'success');
+                    diagResult += '    Data count: ' + (json.data ? json.data.length : 0) + '\n';
+                    diagResult += '\n✅ KONEKSI BERHASIL!\n';
+                    success = true;
                 } else {
-                    showToast('Koneksi gagal: ' + (json.message || 'Unknown error'), 'error');
+                    diagResult += '    Error: ' + (json.message || 'Unknown') + '\n';
+                    diagResult += '\n❌ Server merespons dengan error\n';
                 }
-            } catch (err) {
-                showToast('Gagal menghubungi server: ' + err.message, 'error');
+            } catch (e) {
+                diagResult += '    JSON valid: TIDAK\n';
+                diagResult += '\n❌ Response bukan JSON — kemungkinan halaman login Google\n';
             }
-
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-plug"></i> Tes';
+        } else if (resp.status === 401 || resp.status === 403) {
+            diagResult += '\n❌ Akses ditolak (HTTP ' + resp.status + ')\n';
+            diagResult += '    Solusi: Deploy ulang dengan "Who has access: Anyone"\n';
+        } else {
+            diagResult += '\n❌ Server merespons dengan error HTTP ' + resp.status + '\n';
         }
+    } catch (fetchErr) {
+        diagResult += '    Error: ' + fetchErr.message + '\n';
+        diagResult += '\n[2] Fetch gagal, mencoba XHR...\n';
 
+        try {
+            const json = await xhrGet(url);
+            diagResult += '    XHR Response: ' + JSON.stringify(json).substring(0, 300) + '\n';
+            if (json && json.status === 'ok') {
+                diagResult += '\n✅ XHR BERHASIL! Data: ' + (json.data ? json.data.length : 0) + ' transaksi\n';
+                success = true;
+            } else {
+                diagResult += '\n❌ XHR merespons dengan error: ' + (json ? json.message : 'No response') + '\n';
+            }
+        } catch (xhrErr) {
+            diagResult += '    XHR Error: ' + xhrErr.message + '\n';
+            diagResult += '\n❌ SEMUA METODE GAGAL\n\n';
+            diagResult += 'Kemungkinan penyebab:\n';
+            diagResult += '1. URL deployment salah atau kedaluwara\n';
+            diagResult += '2. "Who has access" bukan "Anyone"\n';
+            diagResult += '3. Script belum di-authorize\n';
+            diagResult += '4. SPREADSHEET_ID salah\n';
+            diagResult += '5. Header Sheet1 tidak sesuai\n';
+        }
+    }
+
+    console.log(diagResult);
+
+    if (success) {
+        const count = 'Data ditemukan!';
+        showToast('Koneksi berhasil! ' + count, 'success');
+    } else {
+        showToast('Koneksi gagal — buka Console (F12) untuk detail diagnosa', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-plug"></i> Tes';
+}
         async function saveSettings() {
             const url = document.getElementById('scriptUrl').value.trim();
             settings.scriptUrl = url;
