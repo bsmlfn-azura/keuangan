@@ -269,34 +269,21 @@
             finally { toggleLoad(false); }
         }
 
-        async function saveData() {
-            toggleLoad(true);
-            
-            const payload = {
-                action: 'add',
-                id: Date.now(),
-                type: document.getElementById('tType').value,
-                amount: parseFloat(document.getElementById('tAmt').value),
-                date: document.getElementById('tDate').value,
-                description: document.getElementById('tDesc').value
-            };
-            
-            try {
-                // PERBAIKAN: Menambahkan Headers di sini
+                    try {
+                // PERBAIKAN KRUSIAL: Gunakan 'text/plain' agar tidak terjadi error CORS (Failed to fetch)
                 const response = await fetchWithTimeout(API_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json' // <--- INI PENTING
+                        'Content-Type': 'text/plain' // <--- GANTI JADI INI (Sebelumnya application/json)
                     },
                     body: JSON.stringify(payload),
-                    redirect: 'follow' // Memastikan mengikuti redirect Google
+                    redirect: 'follow'
                 });
 
-                // Cek apakah response valid JSON
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    await loadData(); // Refresh data
+                    await loadData(); 
                     document.getElementById('formTrans').reset();
                     document.getElementById('tDate').valueAsDate = new Date();
                     updLbl();
@@ -310,18 +297,13 @@
                 alert("GAGAL SIMPAN: " + e.message); 
             }
             finally { toggleLoad(false); }
-        }
 
-        async function delData(id) {
-            if(!confirm("Hapus data ini?")) return;
-            toggleLoad(true);
-            
-            try {
-                // PERBAIKAN: Menambahkan Headers di sini juga
+                    try {
+                // PERBAIKAN KRUSIAL: Gunakan 'text/plain'
                 const response = await fetchWithTimeout(API_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json' // <--- INI PENTING
+                        'Content-Type': 'text/plain' // <--- GANTI JADI INI
                     },
                     body: JSON.stringify({ action: 'delete', id: id }),
                     redirect: 'follow'
@@ -340,7 +322,6 @@
                 alert("Gagal Hapus: " + e.message); 
             }
             finally { toggleLoad(false); }
-        }
 
         document.getElementById('formTrans').addEventListener('submit', (e) => { e.preventDefault(); saveData(); });
 
