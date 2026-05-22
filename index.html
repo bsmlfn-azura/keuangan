@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PERBAIKAN 1: Menambahkan maximum-scale dan user-scalable=0 agar tampilan tidak mengecil/berubah saat scroll atau ketik -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Aplikasi Keuangan Cloud (Google Sheet)</title>
     <style>
         :root {
@@ -18,74 +19,100 @@
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        .container { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; grid-template-columns: 1fr; }
+        /* PERBAIKAN 2: Menggunakan min-height dan memastikan background tetap stabil */
+        html, body { height: 100%; width: 100%; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; min-height: 100dvh; /* Dynamic Viewport Height */ overflow-x: hidden; }
+        
+        .container { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; grid-template-columns: 1fr; width: 100%; }
         @media (min-width: 992px) { .container { grid-template-columns: 350px 1fr; } }
 
         header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; word-break: break-word; }
 
         /* Cards & Layout */
-        .card { background: var(--card-bg); border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+        .card { background: var(--card-bg); border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; width: 100%; }
         .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--secondary); font-weight: 600; text-transform: uppercase; }
         
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; grid-column: 1 / -1; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; grid-column: 1 / -1; }
         .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-value { font-size: 1.25rem; font-weight: 700; word-break: break-all; } /* Mencegah teks panjang merusak layout */
         .text-green { color: var(--success); }
         .text-red { color: var(--danger); }
         .text-blue { color: var(--primary); }
 
         /* Form */
         .form-group { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 6px; font-weight: 500; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem; }
+        
+        /* PERBAIKAN 3: Font size input 16px agar iOS tidak auto-zoom saat fokus */
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            font-size: 16px; /* Penting untuk mencegah zoom iOS */
+            background-color: #fff;
+        }
+
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 16px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background-color: #1d4ed8; }
-        .btn-delete { background: none; border: none; color: var(--secondary); cursor: pointer; font-size: 1.1rem; }
-        .btn-delete:hover { color: var(--danger); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-delete { background: none; border: none; color: var(--secondary); cursor: pointer; font-size: 1.2rem; padding: 5px; }
+        .btn-delete:active { opacity: 0.5; }
 
         /* Table */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; } /* Min width agar tabel tidak gepeng di HP */
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
         .badge-inc { background-color: #d1fae5; color: #065f46; }
         .badge-out { background-color: #fee2e2; color: #991b1b; }
 
         /* Loading Overlay */
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; display: flex; justify-content: center; align-items: center; font-weight: bold; display: none; }
-        .chart-container { width: 100%; height: 300px; position: relative; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(255,255,255,0.9); z-index: 999; display: none; justify-content: center; align-items: center; font-weight: bold; flex-direction: column; gap: 10px; }
+        
+        /* Chart Container - Fixed Height agar tidak berubah saat scroll */
+        .chart-container { 
+            width: 100%; 
+            height: 300px; /* Tinggi tetap */
+            position: relative; 
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #f0f0f0;
+            overflow: hidden; /* Mencegah chart keluar container */
+        }
         
         /* Toast */
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 12px 24px; border-radius: 8px; transform: translateY(150%); transition: 0.3s; z-index: 1000; }
-        .toast.show { transform: translateY(0); }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 30px; transition: 0.3s; z-index: 1000; width: max-content; max-width: 90%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
 
-    <div id="loading">Memuat Data...</div>
+    <div id="loading">
+        <div>Memuat Data...</div>
+        <small>Mohon tunggu sebentar</small>
+    </div>
 
     <div class="container">
         <header>
-            <h1>💰 KeuanganKu (Cloud)</h1>
-            <div style="font-size: 0.9rem; color: var(--text-muted);">Data disimpan di Google Sheet</div>
+            <h1>💰 KeuanganKu</h1>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: right;">Google Sheet Sync</div>
         </header>
 
         <div class="summary-grid">
             <div class="stat-card">
-                <div class="stat-label">Total Pemasukan</div>
+                <div class="stat-label" style="font-size:0.8rem">Pemasukan</div>
                 <div class="stat-value text-green" id="totalIncome">Rp 0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Total Pengeluaran</div>
+                <div class="stat-label" style="font-size:0.8rem">Pengeluaran</div>
                 <div class="stat-value text-red" id="totalExpense">Rp 0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Sisa Saldo</div>
+                <div class="stat-label" style="font-size:0.8rem">Saldo</div>
                 <div class="stat-value text-blue" id="totalBalance">Rp 0</div>
             </div>
         </div>
@@ -95,50 +122,51 @@
                 <h2>Input Transaksi</h2>
                 <form id="transactionForm">
                     <div class="form-group">
-                        <label>Jenis Transaksi</label>
+                        <label>Jenis</label>
                         <select id="type" onchange="updateFormLabels()">
-                            <option value="income">Pemasukan (Income)</option>
-                            <option value="expense">Pengeluaran (Outcome)</option>
+                            <option value="income">Pemasukan</option>
+                            <option value="expense">Pengeluaran</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Nominal (Rupiah)</label>
-                        <input type="number" id="amount" placeholder="0" min="1" required>
+                        <label>Nominal (Rp)</label>
+                        <input type="number" id="amount" placeholder="0" inputmode="numeric" required>
                     </div>
                     <div class="form-group">
                         <label>Tanggal</label>
                         <input type="date" id="date" required>
                     </div>
                     <div class="form-group">
-                        <label id="descLabel">Sumber Income</label>
-                        <input type="text" id="description" placeholder="Keterangan..." required>
+                        <label id="descLabel">Keterangan</label>
+                        <input type="text" id="description" placeholder="Contoh: Gaji" autocomplete="off" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Simpan ke Cloud</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
                 </form>
             </div>
         </div>
 
         <div class="right-col">
             <div class="card">
-                <h2>Analisis & Riwayat</h2>
+                <h2>Grafik & Riwayat</h2>
                 <div class="chart-container">
                     <canvas id="financeChart"></canvas>
                 </div>
-                <div class="table-container">
+                
+                <div class="table-container" style="margin-top: 20px;">
                     <table id="transactionTable">
                         <thead>
                             <tr>
-                                <th>Tanggal</th>
+                                <th>Tgl</th>
                                 <th>Ket</th>
-                                <th>Jenis</th>
+                                <th>Tipe</th>
                                 <th>Nominal</th>
-                                <th>Aksi</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
                     </table>
                 </div>
-                <div id="emptyState" class="empty-state" style="text-align:center; padding:20px; color:var(--text-muted); display:none;">
+                <div id="emptyState" style="text-align:center; padding:20px; color:var(--text-muted); display:none; font-size:0.9rem;">
                     Belum ada data.
                 </div>
             </div>
@@ -149,8 +177,7 @@
 
     <script>
         // ==========================================
-        // KONFIGURASI PENTING
-        // Ganti URL di bawah ini dengan URL Web App dari Google Apps Script Anda
+        // PENTING: GANTI URL DI BAWAH INI
         // ==========================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzO79MDKrrxmM42s2hThjbSRquIfEhGOJLYtNvNWaz4nZJ0qSyL_DqKM8xikrycZcS_/exec";
 
@@ -159,7 +186,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('date').valueAsDate = new Date();
             updateFormLabels();
-            fetchData(); // Ambil data dari Google Sheet saat pertama buka
+            fetchData();
         });
 
         function updateFormLabels() {
@@ -168,30 +195,24 @@
             const input = document.getElementById('description');
             if (type === 'income') {
                 label.innerText = 'Sumber Income';
-                input.placeholder = 'Contoh: Gaji, Bonus';
+                input.placeholder = 'Gaji, Bonus, Lainnya';
             } else {
                 label.innerText = 'Jenis Outcome';
-                input.placeholder = 'Contoh: Makan, Transport';
+                input.placeholder = 'Makan, Transport, Tagihan';
             }
         }
-
-        // --- FUNGSI KOMUNIKASI DENGAN GOOGLE SHEET ---
 
         async function fetchData() {
             showLoading(true);
             try {
-                // Menggunakan action 'read'
-                const url = `${SCRIPT_URL}?action=read`;
-                const response = await fetch(url);
+                const response = await fetch(`${SCRIPT_URL}?action=read`);
                 const result = await response.json();
-                
                 if (result.status === 'success') {
                     transactions = result.data;
                     renderAll();
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("Gagal mengambil data. Pastikan URL Script benar dan internet lancar.");
+                console.error(error);
             } finally {
                 showLoading(false);
             }
@@ -200,63 +221,44 @@
         async function sendTransactionData(data) {
             showLoading(true);
             try {
-                // Menggunakan POST method dengan action 'add'
                 const payload = { ...data, action: 'add' };
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                    // Mode 'no-cors' biasanya tidak dibutuhkan jika Apps Script di-deploy dengan akses 'Anyone',
-                    // tapi jika error, tambahkan mode: 'no-cors' (namun response jadi opaque).
-                    // Konfigurasi di atas sudah optimal untuk Apps Script.
-                });
-
-                // Fetch POST ke Apps Script terkadang tidak mengembalikan JSON response langsung karena redirect
-                // Kita asumsikan sukses jika tidak error network, lalu fetch ulang data.
-                await fetchData(); 
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                await fetchData();
                 document.getElementById('transactionForm').reset();
                 document.getElementById('date').valueAsDate = new Date();
                 updateFormLabels();
-                showToast('Data tersimpan di Spreadsheet!');
+                showToast('Data Tersimpan!');
             } catch (error) {
-                console.error("Error sending data:", error);
-                alert("Gagal menyimpan data.");
+                alert('Gagal menyimpan.');
             } finally {
                 showLoading(false);
             }
         }
 
         async function deleteTransaction(id) {
-            if(!confirm('Hapus data ini dari Spreadsheet?')) return;
-            
+            if(!confirm('Hapus data?')) return;
             showLoading(true);
             try {
-                const payload = { id: id, action: 'delete' };
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                await fetchData(); // Refresh data
-                showToast('Data dihapus.');
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ id: id, action: 'delete' }) });
+                await fetchData();
+                showToast('Terhapus');
             } catch (error) {
-                alert("Gagal menghapus data.");
+                alert('Gagal menghapus.');
             } finally {
                 showLoading(false);
             }
         }
 
-        // --- LOGIKA APLIKASI ---
-
         document.getElementById('transactionForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const newTransaction = {
-                id: Date.now(), // ID unik sementara berdasarkan waktu
+            const data = {
+                id: Date.now(),
                 type: document.getElementById('type').value,
                 amount: parseFloat(document.getElementById('amount').value),
                 date: document.getElementById('date').value,
                 description: document.getElementById('description').value
             };
-            sendTransactionData(newTransaction);
+            sendTransactionData(data);
         });
 
         function formatRupiah(num) {
@@ -266,18 +268,14 @@
         function renderAll() {
             renderTable();
             renderSummary();
-            drawChart();
+            requestAnimationFrame(drawChart); // Gunakan requestAnimationFrame agar lebih smooth
         }
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             const empty = document.getElementById('emptyState');
             tbody.innerHTML = '';
-
-            if (transactions.length === 0) {
-                empty.style.display = 'block';
-                return;
-            }
+            if (transactions.length === 0) { empty.style.display = 'block'; return; }
             empty.style.display = 'none';
 
             transactions.forEach(t => {
@@ -286,9 +284,9 @@
                 row.innerHTML = `
                     <td>${t.date}</td>
                     <td>${t.description}</td>
-                    <td><span class="badge ${isIncome ? 'badge-inc' : 'badge-out'}">${isIncome ? 'Masuk' : 'Keluar'}</span></td>
+                    <td><span class="badge ${isIncome ? 'badge-inc' : 'badge-out'}">${isIncome ? 'In' : 'Out'}</span></td>
                     <td class="${isIncome ? 'text-green' : 'text-red'}" style="font-weight:bold">${formatRupiah(t.amount)}</td>
-                    <td><button class="btn-delete" onclick="deleteTransaction(${t.id})">&times;</button></td>
+                    <td style="text-align:center;"><button class="btn-delete" onclick="deleteTransaction(${t.id})">&times;</button></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -302,32 +300,41 @@
             document.getElementById('totalBalance').innerText = formatRupiah(income - expense);
         }
 
-        // --- CHART CANVAS SEDERHANA ---
+        // --- CHART LOGIC DENGAN DEBOUNCE ---
+        // Debounce mencegah grafik digambar ulang terus menerus saat sedang scroll
+        let resizeTimeout;
         function drawChart() {
             const canvas = document.getElementById('financeChart');
+            if(!canvas) return;
+            
             const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
             
+            // Set ukuran canvas sesuai container tetap
             const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            const w = rect.width, h = rect.height;
+            const rect = container.getBoundingClientRect();
             
+            // Hanya set ukuran jika berubah signifikan (menghindari flickering)
+            if(canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.scale(dpr, dpr);
+            }
+
+            const w = rect.width, h = rect.height;
             ctx.clearRect(0, 0, w, h);
 
-            // Group by Month
             const dataMap = {};
             transactions.forEach(t => {
-                const month = t.date.substring(0, 7);
-                if(!dataMap[month]) dataMap[month] = { in: 0, out: 0 };
-                if(t.type === 'income') dataMap[month].in += t.amount;
-                else dataMap[month].out += t.amount;
+                const m = t.date.substring(0, 7);
+                if(!dataMap[m]) dataMap[m] = { in: 0, out: 0 };
+                if(t.type === 'income') dataMap[m].in += t.amount;
+                else dataMap[m].out += t.amount;
             });
 
             const labels = Object.keys(dataMap).sort();
             if(labels.length === 0) {
-                ctx.fillStyle = '#94a3b8'; ctx.textAlign='center'; ctx.fillText('No Data', w/2, h/2);
+                ctx.fillStyle = '#cbd5e1'; ctx.textAlign='center'; ctx.fillText('Data Kosong', w/2, h/2);
                 return;
             }
 
@@ -335,8 +342,8 @@
             labels.forEach(k => maxVal = Math.max(maxVal, dataMap[k].in, dataMap[k].out));
             maxVal = maxVal * 1.1 || 100;
 
-            const pad = 40, chartH = h - pad*2, chartW = w - pad*2;
-            const barW = Math.min(40, (chartW/labels.length)/2.5);
+            const pad = 30, chartH = h - pad*2, chartW = w - pad*2;
+            const barW = Math.min(30, (chartW/labels.length)/2.5);
             const gap = (chartW - (barW*2*labels.length)) / (labels.length+1);
 
             labels.forEach((key, i) => {
@@ -347,11 +354,18 @@
                 ctx.fillStyle = '#10b981'; ctx.fillRect(x, h - pad - hIn, barW, hIn);
                 ctx.fillStyle = '#ef4444'; ctx.fillRect(x+barW, h - pad - hOut, barW, hOut);
                 
-                ctx.fillStyle = '#64748b'; ctx.textAlign='center'; ctx.font='12px sans-serif';
-                const d = new Date(key+'-01'); ctx.fillText(d.toLocaleDateString('id-ID',{month:'short'}), x+barW, h-pad+20);
+                ctx.fillStyle = '#64748b'; ctx.textAlign='center'; ctx.font='10px sans-serif';
+                const d = new Date(key+'-01'); ctx.fillText(d.toLocaleDateString('id-ID',{month:'short'}), x+barW, h-pad+15);
             });
-            ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.strokeStyle='#cbd5e1'; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.strokeStyle='#e2e8f0'; ctx.stroke();
         }
+
+        // PERBAIKAN 4: Menambahkan Debounce pada Event Resize
+        // Grafik hanya akan digambar ulang 200ms SETELAH user selesai scroll/resize
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(drawChart, 200);
+        });
 
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'flex' : 'none';
@@ -360,7 +374,6 @@
             const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
         }
-        window.onresize = drawChart;
     </script>
 </body>
 </html>
