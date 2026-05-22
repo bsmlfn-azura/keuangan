@@ -157,11 +157,12 @@
             }
         }
 
-        // 5. SAVE DATA (LOGIKA KUNCI)
+                // 5. SAVE DATA (MENGGUNAKAN METODE GET - ANTI FAILED TO FETCH)
         async function saveData() {
             showLoading(true);
             
-            const payload = {
+            // Siapkan data
+            const dataPayload = {
                 action: 'add',
                 id: Date.now(),
                 type: document.getElementById('inpType').value,
@@ -170,20 +171,20 @@
                 description: document.getElementById('inpDesc').value
             };
 
-            console.log("Mengirim data:", payload); // Debugging
+            console.log("Mengirim via GET:", dataPayload);
 
             try {
-                // PENTING: Gunakan text/plain untuk bypass CORS di Vercel
-                const res = await safeFetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload)
-                });
+                // PERUBAHAN UTAMA: Kita ubah data menjadi Parameter URL
+                const params = new URLSearchParams(dataPayload).toString();
+                const finalUrl = `${API_URL}?${params}`;
 
-                console.log("Respon Server:", res); // Debugging
+                // Lakukan Fetch dengan method GET (Tanpa body, tanpa header kompleks)
+                const res = await safeFetch(finalUrl, { method: 'GET' });
+
+                console.log("Respon Server:", res);
 
                 if(res.status === 'success') {
-                    alert("BERHASIL DISIMPAN!"); // Notifikasi Paksa
+                    alert("BERHASIL DISIMPAN!");
                     document.getElementById('myForm').reset();
                     document.getElementById('inpDate').valueAsDate = new Date();
                     await loadData();
@@ -199,19 +200,21 @@
             }
         }
 
-        // 6. DELETE
+                // 6. DELETE (JUGA MENGGUNAKAN GET)
         async function delData(id) {
             if(!confirm("Hapus?")) return;
             showLoading(true);
             try {
-                const res = await safeFetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'delete', id: id })
-                });
+                const params = new URLSearchParams({ action: 'delete', id: id }).toString();
+                const finalUrl = `${API_URL}?${params}`;
+
+                const res = await safeFetch(finalUrl, { method: 'GET' });
+                
                 if(res.status === 'success') {
                     await loadData();
                     alert("Terhapus");
+                } else {
+                    alert("Gagal Hapus: " + res.message);
                 }
             } catch(err) {
                 alert("Gagal Hapus: " + err);
@@ -219,7 +222,6 @@
                 showLoading(false);
             }
         }
-
         // 7. RENDER
         function render() {
             const tb = document.getElementById('tableBody');
