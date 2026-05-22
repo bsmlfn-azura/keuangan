@@ -193,6 +193,44 @@
 
         let dataTrx = [];
 
+                // ==========================================
+        // FUNGSI BANTUAN: FETCH DENGAN TIMEOUT
+        // Tempatkan kode ini di bagian atas script
+        // ==========================================
+        function fetchWithTimeout(url, options = {}, timeout = 15000) {
+            return new Promise((resolve, reject) => {
+                // Cek jika URL masih placeholder
+                if (url.includes("PASTE_URL") || url.length < 20) {
+                    reject(new Error("URL Script belum diisi! Silakan edit file HTML."));
+                    return;
+                }
+
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeout);
+                
+                fetch(url, { ...options, signal: controller.signal })
+                    .then(response => {
+                        clearTimeout(id);
+                        
+                        // Cek apakah respon valid JSON (Bukan halaman error Google)
+                        const contentType = response.headers.get("content-type");
+                        if (!contentType || !contentType.includes("application/json")) {
+                            reject(new Error("Respon Bukan JSON. Pastikan settingan Google Script 'Who has access' = 'Anyone'."));
+                        } else {
+                            resolve(response);
+                        }
+                    })
+                    .catch(err => {
+                        clearTimeout(id);
+                        if (err.name === 'AbortError') {
+                            reject(new Error("Waktu habis (Timeout). Koneksi lambat."));
+                        } else {
+                            reject(err);
+                        }
+                    });
+            });
+        }
+
         // Init
         window.onload = () => {
             document.getElementById('tDate').valueAsDate = new Date();
