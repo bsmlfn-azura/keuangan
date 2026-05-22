@@ -2,415 +2,254 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport Fix: Mencegah zoom dan scroll kasar -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <title>Aplikasi Keuangan Cloud</title>
+    <title>Keuangan Fix Final</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --border-color: #cbd5e1;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); padding: 16px; padding-bottom: 100px; }
+        .container { max-width: 600px; margin: 0 auto; }
         
-        /* PERBAIKAN 1: Kunci Body agar tidak bergeser aneh */
-        html, body { 
-            width: 100%; 
-            min-height: 100vh; 
-            overflow-x: hidden; /* Mencegah geser ke samping */
-            background-color: var(--bg-color);
-        }
-        
-        body {
-            padding: 16px; /* Padding lebih kecil agar lebih lega di HP */
-            padding-bottom: 100px; /* Ruang ekstra di bawah untuk keyboard */
-        }
-
-        .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-
         /* Cards */
-        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 100%; }
-        .card h2 { font-size: 0.9rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 15px; font-weight: 700; }
-
-        /* Stats */
-        .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .stat-box { background: #fff; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-val { font-size: 1rem; font-weight: 700; margin-top: 4px; word-break: break-all; }
-        .stat-lbl { font-size: 0.7rem; color: #64748b; }
-
-        /* PERBAIKAN 2: Input Style Kaku (Statis) */
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 16px; }
+        h2 { font-size: 14px; color: #64748b; text-transform: uppercase; margin-bottom: 12px; }
+        
+        /* Form */
         .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: #334155; }
-        
-        input, select {
-            width: 100%;
-            /* TINGGI TETAP - Ini kunci agar tidak bergerak */
-            height: 48px; 
-            padding: 0 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 16px; /* Mencegah zoom iOS */
-            background-color: #fff;
-            /* HILANGKAN TRANSISI */
-            transition: none;
-            appearance: none; /* Menghilangkan style default bawaan OS yang berat */
-            -webkit-appearance: none;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            /* Jangan gunakan box-shadow/transform saat focus di HP */
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-        }
-
-        /* Tombol */
-        .btn {
-            width: 100%;
-            height: 48px; /* Tinggi tetap */
-            border: none;
-            border-radius: 8px;
-            background-color: var(--primary);
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            /* Hapus transisi tombol */
-            transition: background-color 0.1s; 
-        }
-        .btn:active { background-color: #1d4ed8; transform: scale(0.99); }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #334155; }
+        input, select { width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
+        button { width: 100%; height: 44px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #f1f5f9; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
-        th { background: #f8fafc; color: #64748b; font-weight: 600; font-size: 0.75rem; }
-
-        /* Chart */
-        .chart-box { height: 250px; width: 100%; position: relative; margin-bottom: 15px; background: #fff; border-radius: 8px; border: 1px solid #f1f5f9; }
-
-        /* Loading */
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 400px; font-size: 13px; }
+        th, td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        th { background: #f8fafc; font-size: 11px; }
         
+        /* Stats */
+        .stats { display: flex; gap: 10px; margin-bottom: 16px; }
+        .stat { flex: 1; background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+        .stat-val { font-weight: bold; font-size: 14px; margin-top: 4px; }
+
         /* Utils */
-        .text-green { color: #059669; }
-        .text-red { color: #dc2626; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .bg-inc { background: #d1fae5; color: #065f46; }
+        .text-g { color: #16a34a; }
+        .text-r { color: #dc2626; }
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 99; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .bg-in { background: #dcfce7; color: #166534; }
         .bg-out { background: #fee2e2; color: #991b1b; }
-        .del-btn { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 0 5px; }
-        
-        /* Toast */
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 0.9rem; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; width: max-content; max-width: 90%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; }
-        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .del-btn { border: none; background: none; color: red; cursor: pointer; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <div style="font-weight:bold; font-size:1.1rem;">Memuat Data...</div>
+        <div>Memproses...</div>
     </div>
 
     <div class="container">
-        <header>
+        <header style="margin-bottom:16px;">
             <h1>💰 KeuanganKu</h1>
         </header>
 
-        <div class="stats-row">
-            <div class="stat-box">
-                <div class="stat-lbl">MASUK</div>
-                <div class="stat-val text-green" id="inVal">Rp 0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-lbl">KELUAR</div>
-                <div class="stat-val text-red" id="outVal">Rp 0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-lbl">SALDO</div>
-                <div class="stat-val" id="balVal" style="color:var(--primary)">Rp 0</div>
-            </div>
+        <div class="stats">
+            <div class="stat"><div class="stat-lbl">Masuk</div><div class="stat-val text-g" id="valIn">0</div></div>
+            <div class="stat"><div class="stat-lbl">Keluar</div><div class="stat-val text-r" id="valOut">0</div></div>
+            <div class="stat"><div class="stat-lbl">Saldo</div><div class="stat-val" id="valBal">0</div></div>
         </div>
 
         <div class="card">
-            <h2>Input Baru</h2>
-            <form id="formTrans">
+            <h2>Input Transaksi</h2>
+            <form id="myForm">
                 <div class="form-group">
                     <label>Jenis</label>
-                    <select id="tType" onchange="updLbl()">
+                    <select id="inpType">
                         <option value="income">Pemasukan</option>
                         <option value="expense">Pengeluaran</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Nominal (Rp)</label>
-                    <input type="number" id="tAmt" placeholder="0" inputmode="numeric" required>
+                    <label>Nominal</label>
+                    <input type="number" id="inpAmt" placeholder="0" required>
                 </div>
                 <div class="form-group">
                     <label>Tanggal</label>
-                    <input type="date" id="tDate" required>
+                    <input type="date" id="inpDate" required>
                 </div>
                 <div class="form-group">
-                    <label id="lblDesc">Keterangan</label>
-                    <input type="text" id="tDesc" placeholder="Isi detail..." autocomplete="off" required>
+                    <label>Keterangan</label>
+                    <input type="text" id="inpDesc" placeholder="Isi detail..." required>
                 </div>
-                <button type="submit" class="btn">SIMPAN</button>
+                <button type="submit">SIMPAN DATA</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Grafik</h2>
-            <div class="chart-box">
-                <canvas id="cChart"></canvas>
-            </div>
-            
-            <h2 style="margin-top:20px;">Riwayat</h2>
-            <div class="table-wrapper">
-                <table id="tTable">
-                    <thead>
-                        <tr><th>Tgl</th><th>Ket</th><th>Jns</th><th>Nominal</th><th></th></tr>
-                    </thead>
-                    <tbody id="tBody"></tbody>
+            <h2>Riwayat</h2>
+            <div class="table-wrap">
+                <table id="myTable">
+                    <thead><tr><th>Tgl</th><th>Ket</th><th>Jns</th><th>Nominal</th><th></th></tr></thead>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
-            <div id="emptyMsg" style="text-align:center; padding:20px; color:#94a3b8; font-size:0.9rem; display:none;">Data kosong</div>
         </div>
     </div>
 
-    <div id="toast">Tersimpan!</div>
-
     <script>
         // ==========================================
-        // GANTI URL SCRIPT ANDA DI SINI
+        // 1. SETTING URL (WAJIB DIISI)
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbylXoHcASk47wRnPgumeuGrpufJuf5NaIPx8r2J2ckQlBImgftKh1cD2cMzQFmPUGw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbylXoHcASk47wRnPgumeuGrpufJuf5NaIPx8r2J2ckQlBImgftKh1cD2cMzQFmPUGw/exec"; 
 
-        let dataTrx = [];
+        let transactions = [];
 
-                // --- FUNGSI FETCH VERSI PERBAIKAN (LEbih Toleran) ---
-        function fetchWithTimeout(url, options = {}, timeout = 15000) {
+        // 2. INISIALISASI
+        window.onload = function() {
+            document.getElementById('inpDate').valueAsDate = new Date();
+            loadData();
+        };
+
+        document.getElementById('myForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await saveData();
+        });
+
+        // 3. FUNGSI FETCH YANG DIPERBAIKI (Toleran)
+        function safeFetch(url, options = {}) {
             return new Promise((resolve, reject) => {
-                if (url.includes("PASTE_URL") || url.length < 20) {
-                    reject(new Error("URL Script belum diisi!"));
-                    return;
-                }
+                if(API_URL.includes("PASTE")) { reject("URL belum diisi!"); return; }
 
                 const controller = new AbortController();
-                const id = setTimeout(() => controller.abort(), timeout);
-                
+                const id = setTimeout(() => controller.abort(), 15000);
+
                 fetch(url, { ...options, signal: controller.signal })
-                    .then(response => {
+                    .then(res => {
                         clearTimeout(id);
-                        
-                        // Kita HANYA mengecek status code HTTP (200 OK), bukan tipe konten
-                        // Karena Google Script kadang mengembalikan header yang membingungkan
-                        if (!response.ok) {
-                            throw new Error(`Server Error: ${response.status}`);
-                        }
-                        
-                        // Kita kembalikan response object mentah
-                        resolve(response);
+                        if (!res.ok) throw new Error("Gagal konek (Status: " + res.status + ")");
+                        return res.text().then(txt => {
+                            try { return JSON.parse(txt); } // Coba parse JSON
+                            catch(e) { throw new Error("Respon bukan JSON: " + txt.substring(0,50)); }
+                        });
                     })
+                    .then(data => resolve(data))
                     .catch(err => {
                         clearTimeout(id);
-                        if (err.name === 'AbortError') {
-                            reject(new Error("Waktu habis (Timeout)."));
-                        } else {
-                            reject(err);
-                        }
+                        reject(err.message);
                     });
             });
         }
 
-        // Init
-        window.onload = () => {
-            document.getElementById('tDate').valueAsDate = new Date();
-            updLbl();
-            loadData();
-        };
-
-        function updLbl() {
-            const isInc = document.getElementById('tType').value === 'income';
-            document.getElementById('lblDesc').innerText = isInc ? 'Sumber Dana' : 'Kegunaan Dana';
-            document.getElementById('tDesc').placeholder = isInc ? 'Gaji, Bonus...' : 'Makan, Tagihan...';
-        }
-
-                // --- DATA HANDLING (DIPERBARUI) ---
-
+        // 4. LOAD DATA
         async function loadData() {
-            toggleLoad(true);
+            showLoading(true);
             try {
-                // Tambahkan header ke request GET juga (opsional tapi disarankan)
-                const res = await fetchWithTimeout(`${API_URL}?action=read`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const json = await res.json();
-                if(json.status === 'success') {
-                    dataTrx = json.data;
+                const data = await safeFetch(API_URL + "?action=read");
+                if(data.status === 'success') {
+                    transactions = data.data;
                     render();
-                } else {
-                    console.error("Status error:", json);
                 }
-            } catch(e) { 
-                console.error("Error Load:", e.message);
-                // Opsional: Tampilkan alert jika load awal gagal
-                // alert("Gagal memuat data awal: " + e.message); 
+            } catch(err) {
+                console.error("Load Error:", err);
+                // Jangan alert saat load awal biar tidak ganggu
+            } finally {
+                showLoading(false);
             }
-            finally { toggleLoad(false); }
         }
 
-                    try {
-                // PERBAIKAN KRUSIAL: Gunakan 'text/plain' agar tidak terjadi error CORS (Failed to fetch)
-                const response = await fetchWithTimeout(API_URL, {
+        // 5. SAVE DATA (LOGIKA KUNCI)
+        async function saveData() {
+            showLoading(true);
+            
+            const payload = {
+                action: 'add',
+                id: Date.now(),
+                type: document.getElementById('inpType').value,
+                amount: parseFloat(document.getElementById('inpAmt').value),
+                date: document.getElementById('inpDate').value,
+                description: document.getElementById('inpDesc').value
+            };
+
+            console.log("Mengirim data:", payload); // Debugging
+
+            try {
+                // PENTING: Gunakan text/plain untuk bypass CORS di Vercel
+                const res = await safeFetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain' // <--- GANTI JADI INI (Sebelumnya application/json)
-                    },
-                    body: JSON.stringify(payload),
-                    redirect: 'follow'
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    await loadData(); 
-                    document.getElementById('formTrans').reset();
-                    document.getElementById('tDate').valueAsDate = new Date();
-                    updLbl();
-                    showToast("Data Berhasil Disimpan");
-                } else {
-                    throw new Error("Server Error: " + (result.message || "Unknown"));
-                }
+                console.log("Respon Server:", res); // Debugging
 
-            } catch(e) { 
-                console.error(e);
-                alert("GAGAL SIMPAN: " + e.message); 
-            }
-            finally { toggleLoad(false); }
-
-                    try {
-                // PERBAIKAN KRUSIAL: Gunakan 'text/plain'
-                const response = await fetchWithTimeout(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain' // <--- GANTI JADI INI
-                    },
-                    body: JSON.stringify({ action: 'delete', id: id }),
-                    redirect: 'follow'
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
+                if(res.status === 'success') {
+                    alert("BERHASIL DISIMPAN!"); // Notifikasi Paksa
+                    document.getElementById('myForm').reset();
+                    document.getElementById('inpDate').valueAsDate = new Date();
                     await loadData();
-                    showToast("Data Terhapus");
                 } else {
-                    throw new Error("Server Error");
+                    alert("GAGAL: " + (res.message || "Unknown Error"));
                 }
 
-            } catch(e) { 
-                alert("Gagal Hapus: " + e.message); 
+            } catch(err) {
+                console.error("Save Error:", err);
+                alert("ERROR KONEKSI: " + err);
+            } finally {
+                showLoading(false);
             }
-            finally { toggleLoad(false); }
+        }
 
-        document.getElementById('formTrans').addEventListener('submit', (e) => { e.preventDefault(); saveData(); });
-
-        // --- RENDERING ---
-        function render() {
-            // Table
-            const tb = document.getElementById('tBody');
-            const emp = document.getElementById('emptyMsg');
-            tb.innerHTML = '';
-            if(dataTrx.length === 0) { emp.style.display = 'block'; } 
-            else {
-                emp.style.display = 'none';
-                dataTrx.forEach(d => {
-                    const inc = d.type === 'income';
-                    tb.innerHTML += `
-                        <tr>
-                            <td>${d.date}</td>
-                            <td>${d.description}</td>
-                            <td><span class="badge ${inc?'bg-inc':'bg-out'}">${inc?'IN':'OUT'}</span></td>
-                            <td class="${inc?'text-green':'text-red'}" style="font-weight:600">${formatRp(d.amount)}</td>
-                            <td style="text-align:center"><button class="del-btn" onclick="delData(${d.id})">×</button></td>
-                        </tr>
-                    `;
+        // 6. DELETE
+        async function delData(id) {
+            if(!confirm("Hapus?")) return;
+            showLoading(true);
+            try {
+                const res = await safeFetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'delete', id: id })
                 });
+                if(res.status === 'success') {
+                    await loadData();
+                    alert("Terhapus");
+                }
+            } catch(err) {
+                alert("Gagal Hapus: " + err);
+            } finally {
+                showLoading(false);
             }
-
-            // Summary
-            const inc = dataTrx.filter(x=>x.type==='income').reduce((a,b)=>a+b.amount,0);
-            const out = dataTrx.filter(x=>x.type==='expense').reduce((a,b)=>a+b.amount,0);
-            document.getElementById('inVal').innerText = formatRp(inc);
-            document.getElementById('outVal').innerText = formatRp(out);
-            document.getElementById('balVal').innerText = formatRp(inc-out);
-
-            // Chart (Debounced)
-            clearTimeout(chartTimer);
-            chartTimer = setTimeout(drawChart, 100);
         }
 
-        let chartTimer;
-        function drawChart() {
-            const cvs = document.getElementById('cChart');
-            if(!cvs) return;
-            const ctx = cvs.getContext('2d');
-            const con = cvs.parentElement;
+        // 7. RENDER
+        function render() {
+            const tb = document.getElementById('tableBody');
+            tb.innerHTML = '';
             
-            // Fix Canvas Resolution
-            const dpr = window.devicePixelRatio||1;
-            const r = con.getBoundingClientRect();
-            cvs.width = r.width * dpr;
-            cvs.height = r.height * dpr;
-            ctx.scale(dpr, dpr);
-            
-            const w = r.width, h = r.height;
-            ctx.clearRect(0,0,w,h);
+            let totalIn = 0, totalOut = 0;
 
-            // Group Data
-            const grp = {};
-            dataTrx.forEach(x => {
-                const m = x.date.substring(0,7);
-                if(!grp[m]) grp[m] = {in:0, out:0};
-                if(x.type==='income') grp[m].in += x.amount; else grp[m].out += x.amount;
+            transactions.forEach(t => {
+                const isInc = t.type === 'income';
+                if(isInc) totalIn += t.amount; else totalOut += t.amount;
+
+                tb.innerHTML += `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td>${t.description}</td>
+                        <td><span class="badge ${isInc?'bg-in':'bg-out'}">${isInc?'IN':'OUT'}</span></td>
+                        <td class="${isInc?'text-g':'text-r'}">${formatRp(t.amount)}</td>
+                        <td><button class="del-btn" onclick="delData(${t.id})">&times;</button></td>
+                    </tr>
+                `;
             });
-            const keys = Object.keys(grp).sort();
-            if(keys.length===0) return;
 
-            let max = 0; keys.forEach(k=>max=Math.max(max, grp[k].in, grp[k].out));
-            max = max*1.1 || 100;
-
-            const pad = 20, ch = h-pad*2, cw = w-pad*2;
-            const bw = Math.min(25, cw/keys.length/2.5);
-            const sp = (cw - (bw*2*keys.length))/(keys.length+1);
-
-            keys.forEach((k,i)=>{
-                const x = pad + sp + i*(bw*2+sp);
-                const hi = (grp[k].in/max)*ch;
-                const ho = (grp[k].out/max)*ch;
-                
-                ctx.fillStyle = '#10b981'; ctx.fillRect(x, h-pad-hi, bw, hi);
-                ctx.fillStyle = '#ef4444'; ctx.fillRect(x+bw, h-pad-ho, bw, ho);
-                
-                ctx.fillStyle = '#64748b'; ctx.textAlign='center'; ctx.font='10px sans-serif';
-                const d = new Date(k+'-01');
-                ctx.fillText(d.toLocaleDateString('id-ID',{month:'short'}), x+bw, h-pad+15);
-            });
-            ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.strokeStyle='#e2e8f0'; ctx.stroke();
+            document.getElementById('valIn').innerText = formatRp(totalIn);
+            document.getElementById('valOut').innerText = formatRp(totalOut);
+            document.getElementById('valBal').innerText = formatRp(totalIn - totalOut);
         }
 
-        // Utils
-        function formatRp(n){ return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n); }
-        function toggleLoad(s){ document.getElementById('loader').style.display = s?'flex':'none'; }
-        function showToast(m){ const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
-        window.addEventListener('resize', () => { clearTimeout(chartTimer); chartTimer = setTimeout(drawChart, 200); });
+        // Helpers
+        function showLoading(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
+        function formatRp(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
     </script>
 </body>
 </html>
