@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Monitoring Keuangan Bulanan</title>
+    <title>Aplikasi Keuangan Cloud (Google Sheet)</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -15,279 +15,66 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-radius: 12px;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+        
+        .container { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; grid-template-columns: 1fr; }
+        @media (min-width: 992px) { .container { grid-template-columns: 350px 1fr; } }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 20px;
-            line-height: 1.6;
-        }
+        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
 
-        /* Layout Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            gap: 24px;
-            grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 992px) {
-            .container {
-                grid-template-columns: 350px 1fr;
-            }
-        }
-
-        /* Header */
-        header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .icon-wallet {
-            font-size: 1.8rem;
-        }
-
-        /* Cards */
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 24px;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
-        }
-
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 16px;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        /* Summary Stats */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            grid-column: 1 / -1;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
+        /* Cards & Layout */
+        .card { background: var(--card-bg); border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--secondary); font-weight: 600; text-transform: uppercase; }
+        
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; grid-column: 1 / -1; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
         .text-green { color: var(--success); }
         .text-red { color: var(--danger); }
         .text-blue { color: var(--primary); }
 
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 16px;
-        }
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-delete { background: none; border: none; color: var(--secondary); cursor: pointer; font-size: 1.1rem; }
+        .btn-delete:hover { color: var(--danger); }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
+        /* Table */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .badge-inc { background-color: #d1fae5; color: #065f46; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; }
 
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            margin-top: 10px;
-        }
-
-        .btn-outline:hover {
-            background-color: #eff6ff;
-        }
-
-        /* Transaction List Table */
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        th {
-            background-color: #f8fafc;
-            color: var(--secondary);
-            font-weight: 600;
-        }
-
-        tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-inc {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-out {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        .btn-delete {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            cursor: pointer;
-            font-size: 1.1rem;
-        }
-
-        .btn-delete:hover {
-            color: var(--danger);
-        }
-
-        /* Chart Area */
-        .chart-container {
-            width: 100%;
-            height: 300px;
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--text-main);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            transform: translateY(150%);
-            transition: transform 0.3s ease-out;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateY(0);
-        }
-
-        /* Helper */
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
+        /* Loading Overlay */
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; display: flex; justify-content: center; align-items: center; font-weight: bold; display: none; }
+        .chart-container { width: 100%; height: 300px; position: relative; }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 12px 24px; border-radius: 8px; transform: translateY(150%); transition: 0.3s; z-index: 1000; }
+        .toast.show { transform: translateY(0); }
     </style>
 </head>
 <body>
 
+    <div id="loading">Memuat Data...</div>
+
     <div class="container">
-        <!-- Header -->
         <header>
-            <h1><span class="icon-wallet">💰</span> KeuanganKu</h1>
-            <div style="font-size: 0.9rem; color: var(--text-muted);">
-                <span id="currentDateDisplay"></span>
-            </div>
+            <h1>💰 KeuanganKu (Cloud)</h1>
+            <div style="font-size: 0.9rem; color: var(--text-muted);">Data disimpan di Google Sheet</div>
         </header>
 
-        <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="stat-card">
                 <div class="stat-label">Total Pemasukan</div>
@@ -303,199 +90,178 @@
             </div>
         </div>
 
-        <!-- Left Column: Input Form -->
         <div class="left-col">
             <div class="card">
                 <h2>Input Transaksi</h2>
                 <form id="transactionForm">
                     <div class="form-group">
-                        <label for="type">Jenis Transaksi</label>
+                        <label>Jenis Transaksi</label>
                         <select id="type" onchange="updateFormLabels()">
                             <option value="income">Pemasukan (Income)</option>
                             <option value="expense">Pengeluaran (Outcome)</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="amount">Nominal (Rupiah)</label>
-                        <input type="number" id="amount" placeholder="Contoh: 500000" min="1" required>
+                        <label>Nominal (Rupiah)</label>
+                        <input type="number" id="amount" placeholder="0" min="1" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="date">Tanggal</label>
+                        <label>Tanggal</label>
                         <input type="date" id="date" required>
                     </div>
-
                     <div class="form-group">
-                        <label id="descLabel" for="description">Sumber Income</label>
-                        <input type="text" id="description" placeholder="Contoh: Gaji Bulanan" required>
+                        <label id="descLabel">Sumber Income</label>
+                        <input type="text" id="description" placeholder="Keterangan..." required>
                     </div>
-
-                    <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+                    <button type="submit" class="btn btn-primary">Simpan ke Cloud</button>
                 </form>
-            </div>
-
-            <div class="card">
-                <h2>Database & Laporan</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                    Data disimpan otomatis di browser ini. Anda bisa mengunduh data ke format Excel/CSV.
-                </p>
-                <button onclick="downloadCSV()" class="btn btn-outline">📥 Download Spreadsheet (.csv)</button>
             </div>
         </div>
 
-        <!-- Right Column: Analysis & List -->
         <div class="right-col">
-            <!-- Chart Section -->
             <div class="card">
-                <h2>Analisis Bulanan</h2>
+                <h2>Analisis & Riwayat</h2>
                 <div class="chart-container">
                     <canvas id="financeChart"></canvas>
                 </div>
-                <div style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">
-                    Grafik perbandingan Pemasukan (Hijau) vs Pengeluaran (Merah) per bulan
-                </div>
-            </div>
-
-            <!-- List Section -->
-            <div class="card">
-                <h2>Riwayat Transaksi</h2>
                 <div class="table-container">
                     <table id="transactionTable">
                         <thead>
                             <tr>
                                 <th>Tanggal</th>
-                                <th>Keterangan</th>
+                                <th>Ket</th>
                                 <th>Jenis</th>
                                 <th>Nominal</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody">
-                            <!-- Data will be injected here -->
-                        </tbody>
+                        <tbody id="tableBody"></tbody>
                     </table>
-                    <div id="emptyState" class="empty-state">
-                        Belum ada data transaksi.
-                    </div>
+                </div>
+                <div id="emptyState" class="empty-state" style="text-align:center; padding:20px; color:var(--text-muted); display:none;">
+                    Belum ada data.
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">Data berhasil disimpan!</div>
+    <div id="toast" class="toast">Berhasil!</div>
 
     <script>
-        // --- State Management ---
-        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        // ==========================================
+        // KONFIGURASI PENTING
+        // Ganti URL di bawah ini dengan URL Web App dari Google Apps Script Anda
+        // ==========================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzO79MDKrrxmM42s2hThjbSRquIfEhGOJLYtNvNWaz4nZJ0qSyL_DqKM8xikrycZcS_/exec";
 
-        // --- DOM Elements ---
-        const form = document.getElementById('transactionForm');
-        const tableBody = document.getElementById('tableBody');
-        const emptyState = document.getElementById('emptyState');
-        const descLabel = document.getElementById('descLabel');
-        const descInput = document.getElementById('description');
-        const typeSelect = document.getElementById('type');
-        
-        // Display Elements
-        const elTotalIncome = document.getElementById('totalIncome');
-        const elTotalExpense = document.getElementById('totalExpense');
-        const elTotalBalance = document.getElementById('totalBalance');
-        const currentDateDisplay = document.getElementById('currentDateDisplay');
-        const toast = document.getElementById('toast');
+        let transactions = [];
 
-        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Set default date to today
             document.getElementById('date').valueAsDate = new Date();
-            
-            // Set current date display
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            currentDateDisplay.innerText = new Date().toLocaleDateString('id-ID', options);
-
             updateFormLabels();
-            renderAll();
+            fetchData(); // Ambil data dari Google Sheet saat pertama buka
         });
 
-        // --- Core Functions ---
-
         function updateFormLabels() {
-            const type = typeSelect.value;
-            if (type === 'income') {
-                descLabel.innerText = 'Sumber Income';
-                descInput.placeholder = 'Contoh: Gaji, Bonus, Investasi';
-            } else {
-                descLabel.innerText = 'Jenis Outcome';
-                descInput.placeholder = 'Contoh: Makan, Transport, Tagihan';
-            }
-        }
-
-        function formatRupiah(number) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(number);
-        }
-
-        function formatDate(dateString) {
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('id-ID', options);
-        }
-
-        function showToast(message) {
-            toast.innerText = message;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        function addTransaction(e) {
-            e.preventDefault();
-
             const type = document.getElementById('type').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const date = document.getElementById('date').value;
-            const description = document.getElementById('description').value;
-
-            if (!amount || !date || !description) {
-                alert('Mohon lengkapi semua data'); // Fallback validation
-                return;
+            const label = document.getElementById('descLabel');
+            const input = document.getElementById('description');
+            if (type === 'income') {
+                label.innerText = 'Sumber Income';
+                input.placeholder = 'Contoh: Gaji, Bonus';
+            } else {
+                label.innerText = 'Jenis Outcome';
+                input.placeholder = 'Contoh: Makan, Transport';
             }
+        }
 
-            const transaction = {
-                id: Date.now(),
-                type,
-                amount,
-                date,
-                description
+        // --- FUNGSI KOMUNIKASI DENGAN GOOGLE SHEET ---
+
+        async function fetchData() {
+            showLoading(true);
+            try {
+                // Menggunakan action 'read'
+                const url = `${SCRIPT_URL}?action=read`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    transactions = result.data;
+                    renderAll();
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Gagal mengambil data. Pastikan URL Script benar dan internet lancar.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function sendTransactionData(data) {
+            showLoading(true);
+            try {
+                // Menggunakan POST method dengan action 'add'
+                const payload = { ...data, action: 'add' };
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                    // Mode 'no-cors' biasanya tidak dibutuhkan jika Apps Script di-deploy dengan akses 'Anyone',
+                    // tapi jika error, tambahkan mode: 'no-cors' (namun response jadi opaque).
+                    // Konfigurasi di atas sudah optimal untuk Apps Script.
+                });
+
+                // Fetch POST ke Apps Script terkadang tidak mengembalikan JSON response langsung karena redirect
+                // Kita asumsikan sukses jika tidak error network, lalu fetch ulang data.
+                await fetchData(); 
+                document.getElementById('transactionForm').reset();
+                document.getElementById('date').valueAsDate = new Date();
+                updateFormLabels();
+                showToast('Data tersimpan di Spreadsheet!');
+            } catch (error) {
+                console.error("Error sending data:", error);
+                alert("Gagal menyimpan data.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function deleteTransaction(id) {
+            if(!confirm('Hapus data ini dari Spreadsheet?')) return;
+            
+            showLoading(true);
+            try {
+                const payload = { id: id, action: 'delete' };
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                await fetchData(); // Refresh data
+                showToast('Data dihapus.');
+            } catch (error) {
+                alert("Gagal menghapus data.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- LOGIKA APLIKASI ---
+
+        document.getElementById('transactionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newTransaction = {
+                id: Date.now(), // ID unik sementara berdasarkan waktu
+                type: document.getElementById('type').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value
             };
+            sendTransactionData(newTransaction);
+        });
 
-            transactions.push(transaction);
-            saveData();
-            renderAll();
-            form.reset();
-            document.getElementById('date').valueAsDate = new Date(); // Reset date to today
-            updateFormLabels();
-            showToast('Transaksi berhasil disimpan!');
+        function formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
         }
-
-        function deleteTransaction(id) {
-            if(confirm('Hapus transaksi ini?')) {
-                transactions = transactions.filter(t => t.id !== id);
-                saveData();
-                renderAll();
-                showToast('Transaksi dihapus.');
-            }
-        }
-
-        function saveData() {
-            localStorage.setItem('transactions', JSON.stringify(transactions));
-        }
-
-        // --- Rendering ---
 
         function renderAll() {
             renderTable();
@@ -504,180 +270,97 @@
         }
 
         function renderTable() {
-            tableBody.innerHTML = '';
-            
-            // Sort transactions by date (newest first)
-            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const tbody = document.getElementById('tableBody');
+            const empty = document.getElementById('emptyState');
+            tbody.innerHTML = '';
 
-            if (sortedTransactions.length === 0) {
-                emptyState.style.display = 'block';
+            if (transactions.length === 0) {
+                empty.style.display = 'block';
                 return;
-            } else {
-                emptyState.style.display = 'none';
             }
+            empty.style.display = 'none';
 
-            sortedTransactions.forEach(t => {
-                const row = document.createElement('tr');
+            transactions.forEach(t => {
                 const isIncome = t.type === 'income';
-                const badgeClass = isIncome ? 'badge-inc' : 'badge-out';
-                const label = isIncome ? 'Pemasukan' : 'Pengeluaran';
-                const amountColor = isIncome ? 'text-green' : 'text-red';
-
+                const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${formatDate(t.date)}</td>
+                    <td>${t.date}</td>
                     <td>${t.description}</td>
-                    <td><span class="badge ${badgeClass}">${label}</span></td>
-                    <td class="${amountColor}" style="font-weight:bold;">${formatRupiah(t.amount)}</td>
-                    <td>
-                        <button class="btn-delete" onclick="deleteTransaction(${t.id})" title="Hapus">
-                            &times;
-                        </button>
-                    </td>
+                    <td><span class="badge ${isIncome ? 'badge-inc' : 'badge-out'}">${isIncome ? 'Masuk' : 'Keluar'}</span></td>
+                    <td class="${isIncome ? 'text-green' : 'text-red'}" style="font-weight:bold">${formatRupiah(t.amount)}</td>
+                    <td><button class="btn-delete" onclick="deleteTransaction(${t.id})">&times;</button></td>
                 `;
-                tableBody.appendChild(row);
+                tbody.appendChild(row);
             });
         }
 
         function renderSummary() {
-            const income = transactions
-                .filter(t => t.type === 'income')
-                .reduce((acc, t) => acc + t.amount, 0);
-
-            const expense = transactions
-                .filter(t => t.type === 'expense')
-                .reduce((acc, t) => acc + t.amount, 0);
-
-            elTotalIncome.innerText = formatRupiah(income);
-            elTotalExpense.innerText = formatRupiah(expense);
-            elTotalBalance.innerText = formatRupiah(income - expense);
+            const income = transactions.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+            const expense = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+            document.getElementById('totalIncome').innerText = formatRupiah(income);
+            document.getElementById('totalExpense').innerText = formatRupiah(expense);
+            document.getElementById('totalBalance').innerText = formatRupiah(income - expense);
         }
 
-        // --- Charting (Vanilla JS Canvas) ---
+        // --- CHART CANVAS SEDERHANA ---
         function drawChart() {
             const canvas = document.getElementById('financeChart');
             const ctx = canvas.getContext('2d');
             
-            // Resize canvas resolution
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-
-            const width = rect.width;
-            const height = rect.height;
-
-            ctx.clearRect(0, 0, width, height);
-
-            // Aggregate data by Month (YYYY-MM)
-            const monthlyData = {};
+            const w = rect.width, h = rect.height;
             
-            // Get last 6 months keys for cleaner chart or all months if less
+            ctx.clearRect(0, 0, w, h);
+
+            // Group by Month
+            const dataMap = {};
             transactions.forEach(t => {
-                const monthKey = t.date.substring(0, 7); // "2023-10"
-                if (!monthlyData[monthKey]) {
-                    monthlyData[monthKey] = { income: 0, expense: 0 };
-                }
-                if (t.type === 'income') monthlyData[monthKey].income += t.amount;
-                else monthlyData[monthKey].expense += t.amount;
+                const month = t.date.substring(0, 7);
+                if(!dataMap[month]) dataMap[month] = { in: 0, out: 0 };
+                if(t.type === 'income') dataMap[month].in += t.amount;
+                else dataMap[month].out += t.amount;
             });
 
-            const labels = Object.keys(monthlyData).sort(); // Sort chronologically
-            if (labels.length === 0) {
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '14px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Belum cukup data untuk grafik', width / 2, height / 2);
+            const labels = Object.keys(dataMap).sort();
+            if(labels.length === 0) {
+                ctx.fillStyle = '#94a3b8'; ctx.textAlign='center'; ctx.fillText('No Data', w/2, h/2);
                 return;
             }
 
-            // Calculate scale
             let maxVal = 0;
-            labels.forEach(key => {
-                maxVal = Math.max(maxVal, monthlyData[key].income, monthlyData[key].expense);
-            });
-            // Add some headroom
-            maxVal = maxVal * 1.1 || 100; 
+            labels.forEach(k => maxVal = Math.max(maxVal, dataMap[k].in, dataMap[k].out));
+            maxVal = maxVal * 1.1 || 100;
 
-            const padding = 40;
-            const chartHeight = height - padding * 2;
-            const chartWidth = width - padding * 2;
-            const barWidth = Math.min(50, (chartWidth / labels.length) / 3); // Dynamic bar width
-            const spacing = (chartWidth - (barWidth * 2 * labels.length)) / (labels.length + 1);
+            const pad = 40, chartH = h - pad*2, chartW = w - pad*2;
+            const barW = Math.min(40, (chartW/labels.length)/2.5);
+            const gap = (chartW - (barW*2*labels.length)) / (labels.length+1);
 
-            // Draw Bars
-            labels.forEach((key, index) => {
-                const x = padding + spacing + index * (barWidth * 2 + spacing);
+            labels.forEach((key, i) => {
+                const x = pad + gap + i*(barW*2 + gap);
+                const hIn = (dataMap[key].in/maxVal)*chartH;
+                const hOut = (dataMap[key].out/maxVal)*chartH;
+
+                ctx.fillStyle = '#10b981'; ctx.fillRect(x, h - pad - hIn, barW, hIn);
+                ctx.fillStyle = '#ef4444'; ctx.fillRect(x+barW, h - pad - hOut, barW, hOut);
                 
-                const incomeH = (monthlyData[key].income / maxVal) * chartHeight;
-                const expenseH = (monthlyData[key].expense / maxVal) * chartHeight;
-
-                // Income Bar (Green)
-                ctx.fillStyle = '#10b981';
-                ctx.fillRect(x, height - padding - incomeH, barWidth, incomeH);
-
-                // Expense Bar (Red)
-                ctx.fillStyle = '#ef4444';
-                ctx.fillRect(x + barWidth, height - padding - expenseH, barWidth, expenseH);
-
-                // X-Axis Label (Month)
-                ctx.fillStyle = '#64748b';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'center';
-                const dateObj = new Date(key + '-01');
-                const monthName = dateObj.toLocaleDateString('id-ID', { month: 'short' });
-                ctx.fillText(monthName, x + barWidth, height - padding + 20);
+                ctx.fillStyle = '#64748b'; ctx.textAlign='center'; ctx.font='12px sans-serif';
+                const d = new Date(key+'-01'); ctx.fillText(d.toLocaleDateString('id-ID',{month:'short'}), x+barW, h-pad+20);
             });
-
-            // Draw Base Line
-            ctx.beginPath();
-            ctx.moveTo(padding, height - padding);
-            ctx.lineTo(width - padding, height - padding);
-            ctx.strokeStyle = '#cbd5e1';
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.strokeStyle='#cbd5e1'; ctx.stroke();
         }
 
-        // --- CSV Export ---
-        function downloadCSV() {
-            if (transactions.length === 0) {
-                alert("Tidak ada data untuk diunduh.");
-                return;
-            }
-
-            // Define headers
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "ID,Jenis Transaksi,Tanggal,Deskripsi,Nominal (Rp)\n";
-
-            // Add rows
-            transactions.forEach(t => {
-                const row = [
-                    t.id,
-                    t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-                    t.date,
-                    `"${t.description}"`, // Quote description to handle commas
-                    t.amount
-                ];
-                csvContent += row.join(",") + "\n";
-            });
-
-            // Create download link
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "laporan_keuangan.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
         }
-
-        // --- Event Listeners ---
-        form.addEventListener('submit', addTransaction);
-        
-        // Redraw chart on window resize
-        window.addEventListener('resize', () => {
-             drawChart();
-        });
-
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        window.onresize = drawChart;
     </script>
 </body>
 </html>
